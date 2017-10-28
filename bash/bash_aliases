@@ -12,6 +12,7 @@ alias rip='sudo pacman -Rsc'
 #########################################
 # ls-ing
 #########################################
+alias ls='ls --color=auto'
 alias ll='ls -lhv --group-directories-first'
 alias la='ls -hA --group-directories-first'
 alias lm='ls -alF |more'
