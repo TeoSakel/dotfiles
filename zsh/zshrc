@@ -3,7 +3,7 @@
 # -------------------- #
 
 # Antigen package manager
-source ~/.dotfiles/zsh/antigen.zsh
+source ~/.antigen.zsh
 
 # Colorschemes
 antigen bundle zsh-users/zsh-syntax-highlighting
