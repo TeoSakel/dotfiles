@@ -18,6 +18,7 @@
     ~/.vimrc: vim/vimrc
     ~/.zshenv: zsh/zshenv
     ~/.zshrc: zsh/zshrc
+    ~/.zsh_aliases: zsh/zsh_aliases
 
 - shell:
   - [git submodule update --init --recursive, Installing submodules]
