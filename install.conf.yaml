@@ -2,7 +2,7 @@
     link:
       relink: true
 
-- clean: ['~']
+- clean: ['~', '~/.config']
 
 - link:
     ~/.bashrc: bash/bashrc
