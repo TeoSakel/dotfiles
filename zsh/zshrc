@@ -61,6 +61,6 @@ HIST_STAMPS="yyyy-mm-dd"
 # ---------------- #
 
 if [ -f ~/.zshrc_local ]; then
-    . .zshrc_local
+    . ~/.zshrc_local
 fi
 
