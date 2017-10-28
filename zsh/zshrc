@@ -22,6 +22,10 @@ antigen bundle autojump
 antigen bundle colored-man-pages
 antigen bundle command-not-found
 
+# Helpful shell
+antigen bundle zsh-users/zsh-completions
+# antigen bundle zsh-users/autosuggestions
+
 # Load the theme.
 antigen theme agnoster
 
