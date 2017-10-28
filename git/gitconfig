@@ -1,0 +1,4 @@
+[user]
+	email = teo.sakel@gmail.com
+[core]
+	excludesfile = /home/teo/.gitignore_global
