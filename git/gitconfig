@@ -2,3 +2,5 @@
 	email = teo.sakel@gmail.com
 [core]
 	excludesfile = /home/teo/.gitignore_global
+[include]
+    path = ~/.gitconfig_local
