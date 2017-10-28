@@ -246,9 +246,9 @@ let R_in_buffer = 0  " use tmux
 let R_tmux_split = 1
 " let R_notmuxconf = 1  " use my tmux.conf
 
-" ========================== "
-" ==== Plugin Settings ===== "
-" ========================== "
+" ======================== "
+" ==== Local Configs ===== "
+" ======================== "
 
 let $LOCALFILE=expand("~/.vimrc_local")
 if filereadable($LOCALFILE)
