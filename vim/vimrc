@@ -1,0 +1,247 @@
+" ============================ " 
+" ======== Preamble ========== "
+" ============================ " 
+
+let g:has_async = v:version >= 800 || has('nvim')
+
+call plug#begin('~/.vim/bundle')
+Plug 'chrisbra/csv.vim'
+Plug 'ctrlpvim/ctrlp.vim', { 'on': ['CtrlP', 'CtrlPBuffer', 'CtrlPMRU', 'CtrlPMixed'] }
+Plug 'ervandew/supertab'
+Plug 'flazz/vim-colorschemes'
+Plug 'haya14busa/incsearch.vim'
+Plug 'jalvesaq/Nvim-R', { 'for': 'R' }
+Plug 'junegunn/vim-easy-align', { 'on': 'EasyAlign' }
+Plug 'lervag/vimtex'
+Plug 'mbbill/undotree', { 'on': 'UndotreeToggle' }
+Plug 'scrooloose/nerdcommenter'
+Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
+Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-surround'
+if g:has_async
+    Plug 'w0rp/ale'
+else
+    Plug 'vim-syntastic/syntastic'
+endif
+if has('python')
+    Plug 'Valloric/YouCompleteMe', { 'frozen': 1, 'do': './install.py' }
+    Plug 'SirVer/ultisnips'
+else
+    Plug 'garbas/vim-snipmate'
+endif
+Plug 'honza/vim-snippets'
+call plug#end()
+
+filetype plugin indent on
+set encoding=utf8
+set ffs=unix,dos,mac " EOL convention order
+set shell=$SHELL
+set nocp  " No compatible
+set history=10000 " Sets how many lines of history VIM has to remember
+set autoread " Set to auto read when a file is changed from the outside
+
+" ============================ " 
+" ====== Directories ========= "
+" ============================ " 
+
+set backupdir=~/.vim.d/backups
+set directory=~/.vim.d/swaps
+if has("persistent_undo")
+    set undodir=~/.undodir/
+    set undofile " Save undo's after file closes
+    set undolevels=1000 " How many undos
+    set undoreload=10000 " number of lines to save for undo
+endif
+
+" ============================ " 
+" ========= Theme ============ "
+" ============================ " 
+
+syntax on
+set t_Co=256 " Number of colors
+set background=dark
+colorscheme solarized
+" Special highlighting
+highlight Comment cterm=italic
+highlight CursorLine term=bold cterm=bold guibg=Grey40 
+highlight LineNr term=bold cterm=NONE ctermfg=DarkGrey ctermbg=NONE 
+highlight LineNr gui=NONE guifg=DarkGrey guibg=NONE
+" }}}
+
+" ============================ " 
+" ========= Leader =========== "
+" ============================ " 
+
+let mapleader = ","
+let g:mapleader = ","
+
+" ============================= " 
+" ==== Options/Preferences ==== "
+" ============================= " 
+
+" show current position 
+set ruler " show position at status line
+set cursorline " Emphasis on cursor line
+set number " Show line numbers
+
+" Line Behaviour
+set autoindent
+set smartindent
+set wrap "Wrap lines
+set whichwrap+=<,>,h,l
+set lbr " Linebreak
+set tw=500 " Linebreak position 500 characters
+
+" Window Behaviour
+set hid " A buffer becomes hidden when it is abandoned
+set laststatus=2 " Last window always has a status line
+set wildmenu " Allow TAB-search in menus
+
+" Padding
+set foldcolumn=1  " Add a bit extra
+set scrolloff=1 " Keep some lines above and below the cursor always
+set sidescrolloff=5 " Padding to the side
+
+" Search
+set ignorecase " Ignore case when searching
+set smartcase " When searching try to be smart about cases 
+set hlsearch  " Highlight search results
+set incsearch " Makes search act like search in modern browsers
+
+" Tab Behaviour
+set expandtab " Use spaces instead of tabs
+set smarttab " Be smart when using tabs ;)
+set shiftwidth=4 " 1 tab == 4 spaces
+set tabstop=4
+
+" Code Folding
+set foldmethod=syntax " hold based on indent
+set foldnestmax=5 " deepest fold allowed
+set foldenable " don't fold by default
+
+" Misc
+set lazyredraw " Don't redraw while executing macros (good performance config)
+set magic " For regular expressions turn magic on
+set showmatch " Show matching brackets when text indicator is over them
+set mat=2 " How many tenths of a second to blink when matching brackets
+set backspace=eol,start,indent " Configure backspace so it acts as it should act
+set listchars=tab:>\ ,trail:-,extends:>,precedes:<,nbsp:+ " Special character representation
+set formatoptions+=j  " Delete comment character when joining lines
+set sessionoptions-=options " options and mappings not persistent across sessions
+set visualbell " use visual instead of annoying audio bell
+
+" Allow use of the mouse
+if has('mouse')
+    set mouse=a
+endif
+
+" =========================== "
+" === Functions & Autocmd === "
+" =========================== "
+
+" Delete trailing white space on save, useful for Python and CoffeeScript ;)
+func! DeleteTrailingWS()
+  exe "normal mz"
+  %s/\s\+$//ge
+  exe "normal `z"
+endfunc
+autocmd BufWrite *.py :call DeleteTrailingWS()
+autocmd BufWrite *.coffee :call DeleteTrailingWS()
+
+
+" ============================ "
+" ==== Custom KeyMappings ==== "
+" ============================ "
+
+" :W sudo saves the file 
+command W w !sudo tee % > /dev/null
+
+" Fast saving
+nmap <leader>w :w!<cr>
+" Enter breaks lines in Normal mode
+nmap <S-CR> O<Esc>
+nmap <CR> o<Esc>
+
+" Visual mode pressing * or # searches for the current selection
+" Super useful! From an idea by Michael Naumann
+vnoremap <silent> * :<C-u>call VisualSelection('', '')<CR>/<C-R>=@/<CR><CR>
+vnoremap <silent> # :<C-u>call VisualSelection('', '')<CR>?<C-R>=@/<CR><CR>
+
+" Toggle cursorline emphasis
+nnoremap <leader>i :set cursorline!<cr> " Toggle cursorline focus
+
+" ========================== "
+" ==== Plugin Settings ===== "
+" ========================== "
+
+" powerline
+let g:powerline_pycmd="py3"
+
+" Easy Align Settings
+xmap ga <Plug>(EasyAlign)  " Start interactive EasyAlign in visual mode (e.g. vipga)
+nmap ga <Plug>(EasyAlign)  " Start interactive EasyAlign for a motion/text object (e.g. gaip)
+
+" Linter
+if g:has_async
+    " Ale move between errors with Ctrl-j/k
+    nmap <silent> <C-j> <Plug>(ale_next_wrap)
+    nmap <silent> <C-k> <Plug>(ale_previous_wrap)
+else
+    " Syntastic recommended settings
+    set statusline+=%#warningmsg#
+    set statusline+=%{SyntasticStatuslineFlag()}
+    set statusline+=%*
+
+    let g:syntastic_always_populate_loc_list = 1
+    let g:syntastic_auto_loc_list = 1
+    let g:syntastic_check_on_open = 1
+    let g:syntastic_check_on_wq = 0
+endif
+
+" Toggle NERDTree with Ctrl-n
+map <C-n> :NERDTreeToggle<CR>
+" Automatically close vim if only NERDTree is left
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+
+" NERDCommenter recommended options
+let g:NERDSpaceDelims = 1 " space after comment
+let g:NERDCompactSexyComs = 1 " Use compact syntax for prettified multi-line comments
+let g:NERDDefaultAlign = 'left' " Align comments left 
+let g:NERDTrimTrailingWhitespace = 1 " Trim whitespace from comments
+
+" CtrlP recommended options
+let g:ctrlp_map = '<c-p>'
+let g:ctrlp_cmd = 'CtrlP'
+let g:ctrlp_working_path_mode = 'ra' "r:nearest ancestor with git, a:current file (almost)  
+
+set wildignore+=*/tmp/*,*.so,*.swp,*.zip
+
+let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
+let g:ctrlp_custom_ignore = {
+            \ 'dir':  '\v[\/]\.(git|hg|svn)$',
+            \ 'file': '\v\.(exe|so|dll)$',
+            \ 'link': 'some_bad_symbolic_links',
+            \ }
+let g:ctrlp_user_command = 'find %s -type f'
+
+" UndoTree
+nnoremap <F5> :UndotreeToggle<cr>
+
+" Snippets
+if has('python')
+    " from: https://stackoverflow.com/a/22253548/2167530
+    " make YCM compatible with UltiSnips (using supertab)
+    let g:ycm_key_list_select_completion = ['<C-n>', '<Down>']
+    let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
+    let g:SuperTabDefaultCompletionType = '<C-n>'
+
+    " better key bindings for UltiSnipsExpandTrigger
+    let g:UltiSnipsExpandTrigger = "<tab>"
+    let g:UltiSnipsJumpForwardTrigger = "<tab>"
+    let g:UltiSnipsJumpBackwardTrigger = "<s-tab>"
+endif
+
+" Nvim-R
+let R_in_buffer = 0  " use tmux
+let R_tmux_split = 1
+" let R_notmuxconf = 1  " use my tmux.conf
