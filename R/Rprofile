@@ -1,0 +1,98 @@
+# Set default CRAN Mirror
+.First <- function() {
+    options(
+        repos = c(CRAN = "https://cran.rstudio.com/"),
+        browserNLdisabled = TRUE,
+        deparse.max.lines = 2)
+}
+
+
+if (interactive()) {
+    # if run in terminal color output
+    # must have colorout package: devtools::install_github("jalvesaq/colorout")
+    if (Sys.getenv("RSTUDIO") == "") try(library(colorout), silent = TRUE)
+
+    # Custom environment with useful functions
+    .teo <- new.env()
+
+    .teo$source_biocLite <- function(x = NULL) {
+        source("https://bioconductor.org/biocLite.R")
+        if (!is.null(x)) biocLite(x)
+    }
+    .teo$splitAt <- function(x, pos) unname(split(x, cumsum(seq_along(x) %in% pos)))
+    .teo$ht <- function(x, n = 10) list(HEAD = head(x, n), TAIL = tail(x, n))
+    .teo$duplicates <- function(x) duplicated(x) | duplicated(x, fromLast = TRUE)
+    .teo$gg_color_hue <- function(n) {
+        # produces ggplot's default colors
+        hues = seq(15, 375, length = n + 1)
+        hcl(h = hues, l = 65, c = 100)[1:n]
+    }
+    .teo$object_size <- function(obj) print(object.size(obj), units = "auto")
+    .teo$regextract <- function(txt, regex, ...) regmatches(txt, regexpr(regex, txt, ...))
+
+    # Trigonometry
+    .teo$rad2deg <- function(rad) rad * 180 / pi
+    .teo$deg2rad <- function(deg) deg * pi / 180
+    .teo$cosdg <- function(x) cospi(x / 180)
+    .teo$sindg <- function(x) sinpi(x / 180)
+    .teo$tandg <- function(x) tanpi(x / 180)
+
+    # copy variable `x` to system clipboard
+    .teo$pbcopy <- function(x, sep = "\t",
+                            row.names = FALSE, col.names = TRUE, ...){
+        con <- switch(Sys.info()["sysname"],
+                      Linux = pipe("xclip -selection clipboard -i", open = "w"),
+                      Darwin = pipe("pbcopy"),
+                      Windows = "clipboard")
+        write.table(x, con, sep = sep,
+                    row.names = row.names, col.names = col.names, ...)
+        try(close(con), silent = TRUE)  # try in case of "Windows"
+    }
+    # read table from system clipboard
+    .teo$pbpaste <- function(df = TRUE, sep = "\t", header = TRUE, ...) {
+        con <- switch(Sys.info()["sysname"],
+                      Linux = pipe("xclip -selection clipboard -o", open = "r"),
+                      Darwin = pipe("pbpaste"),
+                      Windows = "clipboard")
+        y <- read.table(con, header = header, sep = sep, ...)
+        try(close(con), silent = TRUE)
+        if ( df ) return(y)
+        return(unlist(y, use.names = FALSE))
+    }
+
+    # rip from https://stackoverflow.com/questions/1358003/tricks-to-manage-the-available-memory-in-an-r-session
+    .teo$ll <- function (pos = 1, pattern, order.by, decreasing = FALSE) {
+        napply <- function(names, fn) sapply(names, function(x) fn(get(x, pos = pos)))
+        names <- ls(pos = pos, pattern = pattern)
+        obj.class <- napply(names, function(x) as.character(class(x))[1])
+        obj.mode <- napply(names, mode)
+        obj.type <- ifelse(is.na(obj.class), obj.mode, obj.class)
+        obj.size <- napply(names, utils::object.size)
+        obj.prettysize <- napply(names, function(x) format(utils::object.size(x), units = "auto"))
+        obj.dim <- t(napply(names, function(x) as.numeric(dim(x))[1:2]))
+        vec <- is.na(obj.dim)[, 1] & (obj.type != "function")
+        obj.dim[vec, 1] <- napply(names, length)[vec]
+        out <- data.frame(obj.type, obj.size, obj.prettysize, obj.dim)
+        names(out) <- c("Type", "Size", "PrettySize", "Rows", "Columns")
+        if (!missing(order.by))
+            return(out[order(out[[order.by]], decreasing = decreasing), ])
+        return(out)
+    }
+
+    # shorthand
+    .teo$lsz <- function(..., n = 10) 
+        .teo$ll(..., order.by = "Size", decreasing = TRUE)
+
+    attach(.teo)
+
+    # Quote of the Session
+    # to work: install.packages(c("fortunes", "statquotes"))
+    if (as.integer(format(Sys.time(), '%S')) < 30) {
+        try(print(fortunes::fortune()), silent = TRUE)
+    } else {
+        try(print(statquotes::statquote()), silent = TRUE)
+    }
+    cat("\n")
+
+}
+

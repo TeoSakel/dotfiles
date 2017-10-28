@@ -1,0 +1,3 @@
+R_LIBS_USER = '~/.local/lib/R%v'
+#R_COMPILE_PKGS = TRUE 
+R_ENABLE_JIT = 3
