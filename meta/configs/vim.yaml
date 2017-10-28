@@ -1,0 +1,11 @@
+- shell:
+    - mkdir -p vim/vim/bundle
+    - [curl -fLo vim/vim/autoload/plug.vim --create-dirs "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim", Downlading vim-plug]
+
+- link:
+    ~/.vim: vim/vim
+    ~/.vimrc: vim/vimrc
+
+- shell:
+    - [vim -c 'PluginInstall' +qall, Installing vim plugins]
+    

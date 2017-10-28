@@ -1,0 +1,7 @@
+- link:
+    ~/.zshenv: zsh/zshenv
+    ~/.zshrc: zsh/zshrc
+    ~/.zsh_aliases: zsh/zsh_aliases
+
+- shell:
+    - [curl -L git.io/antigen > zsh/antigen.zsh]

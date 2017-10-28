@@ -1,0 +1,7 @@
+
+- link:
+    ~/.bashrc: bash/bashrc
+    ~/.bash_aliases: bash/bash_aliases
+    ~/.bash_functions: bash/bash_functions
+    ~/.bash_profile: bash/bash_profile
+    ~/.inputrc: bash/inputrc
