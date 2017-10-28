@@ -1,0 +1,237 @@
+#
+# ~/.bashrc
+#
+
+# If not running interactively, don't do anything
+[[ $- != *i* ]] && return
+
+PS1='[\u@\h \W]\$ '
+# >>>>BEGIN ADDED BY CNCHI INSTALLER<<<< #
+EDITOR=/usr/bin/nano
+# >>>>>END ADDED BY CNCHI INSTALLER<<<<< #
+
+# >>>>> Color Table <<<<< #
+txtblk='\e[0;30m' # Black - Regular
+txtred='\e[0;31m' # Red
+txtgrn='\e[0;32m' # Green
+txtylw='\e[0;33m' # Yellow
+txtblu='\e[0;34m' # Blue
+txtpur='\e[0;35m' # Purple
+txtcyn='\e[0;36m' # Cyan
+txtwht='\e[0;37m' # White
+bldblk='\e[1;30m' # Black - Bold
+bldred='\e[1;31m' # Red
+bldgrn='\e[1;32m' # Green
+bldylw='\e[1;33m' # Yellow
+bldblu='\e[1;34m' # Blue
+bldpur='\e[1;35m' # Purple
+bldcyn='\e[1;36m' # Cyan
+bldwht='\e[1;37m' # White
+unkblk='\e[4;30m' # Black - Underline
+undred='\e[4;31m' # Red
+undgrn='\e[4;32m' # Green
+undylw='\e[4;33m' # Yellow
+undblu='\e[4;34m' # Blue
+undpur='\e[4;35m' # Purple
+undcyn='\e[4;36m' # Cyan
+undwht='\e[4;37m' # White
+bakblk='\e[40m'   # Black - Background
+bakred='\e[41m'   # Red
+badgrn='\e[42m'   # Green
+bakylw='\e[43m'   # Yellow
+bakblu='\e[44m'   # Blue
+bakpur='\e[45m'   # Purple
+bakcyn='\e[46m'   # Cyan
+bakwht='\e[47m'   # White
+txtrst='\e[0m'    # Text Reset
+
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+#########################
+# >>>>>MANUAL PART<<<<< #
+#########################
+
+OS=$(uname)
+
+# PS1
+export PS1="\[$(tput bold)\]\
+\[\033[38;5;6m\]\u\
+\[\033[38;5;2m\]@\h\
+\[\033[38;5;15m\]:\
+\[\033[38;5;13m\]\w\
+\[\033[38;5;11m\]\\$\[$(tput sgr0)\] "
+
+export PROMPT_DIRTRIM=2   # Max number of directories displayed at PS1
+
+# >>>>> History <<<<< #
+
+shopt -s histappend histreedit histverify
+shopt -s cmdhist  # save multi-line commands in history as single line
+export HISTCONTROL=ignoreboth:erasedups # avoid duplicate lines
+export HISTSIZE=10000
+export HISTFILESIZE=${HISTSIZE}
+export HISTIGNORE="&:ls:ll:la:l.:pwd:exit:clear"
+export HISTTIMEFORMAT='%Y-%m-%d_%H:%M:%S_%a  ' # makes history display in YYYY-MM-DD_HH:MM:SS_3CharWee
+
+# >>>>> LESSing <<<<< #
+
+# make less more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+export PAGER=less
+export LESSCHARSET='utf-8'
+# LESS man page colors (makes Man pages more readable).
+export LESS_TERMCAP_mb=$'\E[01;31m'
+export LESS_TERMCAP_md=$'\E[01;31m'
+export LESS_TERMCAP_me=$'\E[0m'
+export LESS_TERMCAP_se=$'\E[0m'
+export LESS_TERMCAP_so=$'\E[01;44;33m'
+export LESS_TERMCAP_ue=$'\E[0m'
+export LESS_TERMCAP_us=$'\E[01;32m'
+
+# >>>>> SHOPTing <<<<< #
+
+shopt -s checkwinsize # resize window if necessary
+shopt -s autocd # auto "cd" when entering just a path
+shopt -s cdspell # this will correct minor spelling errors in a cd command
+shopt -s cdable_vars # if the argument is not a directory assume it's a Var containing the directory name
+shopt -s checkhash
+shopt -s extglob  # necessary for bash completion (programmable completion)
+shopt -s nocaseglob # pathname expansion will be treated as case-insensitive (auto-corrects the case)
+shopt -s globstar # enable Zsh style recursive globing
+shopt -s no_empty_cmd_completion  # no empty completion (bash>=2.04 only)
+unset MAILCHECK  # don't want my shell to warn me of incoming mail
+
+# >>>>> EXPORTing <<<<< #
+
+export BLOCKSIZE=K
+# export EDITOR="$(if [[ -n $DISPLAY ]]; then echo 'gedit'; else echo 'nano'; fi)" # use default text editor
+export EDITOR=/usr/bin/vim
+export HOSTFILE=$HOME/.hosts # put list of remote hosts in ~/.hosts ...
+export TIMEFORMAT=$'\nreal %3R\tuser %3U\tsys %3S\tpcpu %P\n'
+
+# >>>>> LIBRARIES  <<<<< #
+
+# GUROBI
+export GUROBI_HOME="/opt/gurobi651/linux64"
+export PATH="${PATH}:${GUROBI_HOME}/bin"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
+
+# >>>>> PATH  <<<<< #
+
+if [ "$UID" -eq 0 ]; then
+    PATH=$PATH:/usr/local:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
+fi
+
+export PATH=$PATH:$HOME/bin # my scripts
+
+# remove duplicate path entries
+export PATH=$(echo $PATH | awk -F: '
+{ for (i = 1; i <= NF; i++) arr[$i]; }
+END { for (i in arr) printf "%s:" , i; printf "\n"; } ')
+
+# >>>>> Some Magic ! <<<<< #
+
+# command-not-found
+if [ -f /usr/share/doc/pkgfile/command-not-found.bash ]; then
+    source /usr/share/doc/pkgfile/command-not-found.bash
+fi
+
+# autojump - a "cd" that remembers
+if [ -f /etc/profile.d/autojump.bash ]; then
+    source /etc/profile.d/autojump.bash
+fi
+
+# autocomplete ssh commands
+complete -W "$(echo `cat ~/.bash_history | egrep '^ssh ' | sort | uniq | sed 's/^ssh //'`;)" ssh
+# bind Space:magic-space  # Space autocompletes the !! and !-1 commands
+# bind '"\e[A"':history-search-backward  # up-key autocompletes history backwards
+# bind '"\e[B"':history-search-forward  # some for down key
+bind '"\eh": "\C-a\eb\ed\C-y\e#man \C-y\C-m\C-p\C-p\C-a\C-d\C-e"' # mimic Zsh help
+
+
+# >>>>> Run extra bash files <<<<< #
+
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
+if [ -f ~/.bash_functions ]; then
+    . ~/.bash_functions
+fi
+
+# >>>>> Greetings <<<<< #
+
+hour=$(date +"%H") # get current hour (24 clock format i.e. 0-23)
+# if it is midnight to midafternoon will say G'morning
+if [ $hour -ge 0 -a $hour -lt 12 ]
+then
+  greet="Good Morning, $USER. Welcome back."
+# if it is midafternoon to evening ( before 6 pm) will say G'noon
+elif [ $hour -ge 12 -a $hour -lt 18 ]
+then
+  greet="Good Afternoon, $USER. Welcome back."
+else # it is good evening till midnight
+  greet="Good Evening, $USER. Welcome back."
+fi
+# display greeting
+echo $greet
+
+##### holiday greeting
+day=$(date +"%B%e") # get current day (Month-Day Format)
+year=$(date +"%Y") # get current year (for new years greeting)
+hol=1 # make sure the holiday greeting is displayed (if any)
+
+# if it is New Year's Day
+if [ "$day" = "January1" ]
+then
+  holgreet="Happy New Years. Have a Happy $year!"
+# if it is Valentine's Day
+elif [ "$day" = "February14" ]
+then
+  holgreet="Have a Happy Valentine's Day!"
+# The Day I kissed Marina
+elif [ "$day" = "March6" ]
+then
+  hollgreet="Remember your Anniversary!"
+# if it is Independance Day
+elif [ "$day" = "March25" ]
+then
+  holgreet="Have a Happy Greek Independance Day!"
+# if it is my birthday
+elif [ "$day" = "July30" ]
+then
+  holgreet="Have a Happy Birthday!!!"
+# if it is Groundhog Day
+elif [ "$day" = "October28" ]
+then
+  holgreet="Have a Happy OXI day!"
+# if it is Christmas Eve
+elif [ "$day" = "December24" ]
+then
+  holgreet="Merry Christmas Eve!"
+# if it is Christmas
+elif [ "$day" = "December25" ]
+then
+  holgreet="Merry Christmas!"
+# if it is New Year's Eve
+elif [ "$day" = "December31" ]
+then
+  holgreet="Happy New Year's Eve!"
+else
+  hol=0
+fi
+# display holiday greeting
+if [ "$hol" = "1" ]
+then
+echo $holgreet
+elif [ "$hol" = "0" ]
+then
+  randomvarthatsomehowimportant=0
+fi

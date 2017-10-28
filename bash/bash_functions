@@ -1,0 +1,419 @@
+#/bin/bash
+#################################################
+# My Bash Functions
+#################################################
+
+# Temporarily add to path
+function apath()
+{
+    if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+        echo "Temporarily add to PATH"
+        echo "usage: apath [dir]"
+    else
+        PATH=$1:$PATH
+    fi
+}
+
+function showfuns()
+{
+  declare -F | cut -d" " -f 3 | egrep -v "^_"
+}
+
+#################################################
+# Extract & Archive
+#################################################
+
+function extract()      # Handy Extract Program
+{
+    if [ -f $1 ] ; then
+        case $1 in
+            *.tar.bz2)   tar xvjf $1     ;;
+            *.tar.gz)    tar xvzf $1     ;;
+            *.bz2)       bunzip2 $1      ;;
+            *.rar)       unrar x $1      ;;
+            *.gz)        gunzip $1       ;;
+            *.tar)       tar xvf $1      ;;
+            *.tbz2)      tar xvjf $1     ;;
+            *.tgz)       tar xvzf $1     ;;
+            *.zip)       unzip $1        ;;
+            *.Z)         uncompress $1   ;;
+            *.7z)        7z x $1         ;;
+            *)           echo "'$1' cannot be extracted via >extract<" ;;
+        esac
+    else
+        echo "'$1' is not a valid file!"
+    fi
+}
+
+# Creates an archive from directory
+function mktar() { tar cvf  "${1%%/}.tar"     "${1%%/}/"; }
+function mktbz() { tar cvjf "${1%%/}.tar.bz2" "${1%%/}/"; }
+function mktgz() { tar cvzf "${1%%/}.tar.gz"  "${1%%/}/"; }
+function mkzip() { zip -r "${1%%/}.zip" "$1" ; }
+
+# Back up file (with date-time)
+function bak() { cp $1 $1_`date +%H:%M:%S_%d-%m-%Y`; }
+
+# Back up Bash files
+function backup_bashfiles()
+{
+  ARCHIVE="$HOME/bash_dotfiles_$(date +%Y%m%d_%H%M%S).tar.gz";
+  cd ~
+  tar -czvf $ARCHIVE .bash_profile .bashrc .bash_functions .bash_aliases .bash_prompt
+  echo "All backed up in $ARCHIVE";
+}
+
+#################################################
+# GREP-ing
+#################################################
+
+# Change grep behaviour if used in a pipe
+function grep() {
+	if [[ -t 1 ]]; then
+		command grep -n "$@"
+	else
+		command grep "$@"
+	fi
+}
+
+# grep by paragraph instead of by line
+function grepp() { [ $# -eq 1 ] && perl -00ne "print if /$1/i" || perl -00ne "print if /$1/i" < "$2"; }
+
+# Search Open Files
+function lsofg()
+{
+    if [ $# -lt 1 ] || [ $# -gt 1 ]; then
+        echo "grep lsof"
+        echo "usage: losfg [port/program/whatever]"
+    else
+        lsof | grep -i $1 | less
+    fi
+}
+
+# Search Processes
+# function psg()
+# {
+#     if [ $# -lt 1 ] || [ $# -gt 1 ]; then
+#         echo "grep running processes"
+#         echo "usage: psg [process]"
+#     else
+#         ps aux | grep USER | grep -v grep
+#         ps aux | grep -i $1 | grep -v grep
+#     fi
+# }
+
+# Search apt-history
+function apt-history() {
+      case "$1" in
+        install)
+              cat /var/log/dpkg.log | grep 'install '
+              ;;
+        upgrade|remove)
+              cat /var/log/dpkg.log | grep $1
+              ;;
+        rollback)
+              cat /var/log/dpkg.log | grep upgrade | \
+                  grep "$2" -A10000000 | \
+                  grep "$3" -B10000000 | \
+                  awk '{print $4"="$5}'
+              ;;
+        *)
+              cat /var/log/dpkg.log
+              ;;
+      esac
+}
+
+# History SUmmary
+function histawk() { history | awk '{a[$2]++}END{for(i in a){printf"%5d\t%s\n",a[i],i}}'|sort -nr|head; }
+
+#################################################
+# Files & strings
+#################################################
+
+# Find a file with a pattern in name:
+function ff() { find . -type f -iname '*'"$*"'*' -ls ; }
+
+# Find a file with pattern $1 in name and Execute $2 on it:
+function fe() { find . -type f -iname '*'"${1:-}"'*' \
+-exec ${2:-file} {} \;  ; }
+
+#  Find a pattern in a set of files and highlight them:
+#+ (needs a recent version of egrep).
+function fstr()
+{
+    OPTIND=1
+    local mycase=""
+    local usage="fstr: find string in files. Usage: fstr [-i] \"pattern\" [\"filename pattern\"] "
+    while getopts :it opt
+    do
+        case "$opt" in
+           i) mycase="-i " ;;
+           *) echo "$usage"; return ;;
+        esac
+    done
+    shift $(( $OPTIND - 1 ))
+    if [ "$#" -lt 1 ]; then
+        echo "$usage"
+        return;
+    fi
+    find . -type f -name "${2:-*}" -print0 | \
+xargs -0 egrep --color=always -sn ${case} "$1" 2>&- | more
+
+}
+
+# sort lines in a text file
+function linesort() { sort -u "$1" > "$1".sorted; }
+
+# remove duplicate lines in a file (without resorting)
+function removeduplines() { awk '!x[$0]++' "$1" > "$1".unique; }
+
+# Substitutes underscores for blanks in all the files in a directory
+# Consider this alternative:
+# find /tmp/ -depth -name "* *" -execdir rename 's/ /_/g' "{}" \;
+function blank_rename()
+{
+ONE=1                     # For getting singular/plural right (see below).
+number=0                  # Keeps track of how many files actually renamed.
+FOUND=0                   # Successful return value.
+for filename in *         #Traverse all files in directory.
+do
+     echo "$filename" | grep -q " "         #  Check whether filename
+     if [ $? -eq $FOUND ]                   #+ contains space(s).
+     then
+       fname=$filename                      # Yes, this filename needs work.
+       n=`echo $fname | sed -e "s/ /_/g"`   # Substitute underscore for blank.
+       mv "$fname" "$n"                     # Do the actual renaming.
+       let "number += 1"
+     fi
+done
+if [ "$number" -eq "$ONE" ]                 # For correct grammar.
+then
+ echo "$number file renamed."
+else
+ echo "$number files renamed."
+fi
+}
+
+# Lowercase file names
+# function lc_fnames() {
+# 	print -n 'Really lowercase all files? (y/n) '
+# 	if read -q ; then
+# 		for i in * ; do
+# 			mv $i $i:l
+# 	done
+# 	fi
+# }
+
+function lc_fnames()
+{
+    for file ; do
+        filename=${file##*/}
+        case "$filename" in
+        */*) dirname==${file%/*} ;;
+        *) dirname=.;;
+        esac
+        nf=$(echo $filename | tr A-Z a-z)
+        newname="${dirname}/${nf}"
+        if [ "$nf" != "$filename" ]; then
+            mv "$file" "$newname"
+            echo "lowercase: $file --> $newname"
+        else
+            echo "lowercase: $file not changed."
+        fi
+    done
+}
+
+function man2pdf()
+{
+	case $1 in
+		*help | "" )
+			echo -e "\nUsage:"
+			echo -e	"\nman2pdf | <manualpage> [generate a pdf from <manualpage>]\n"
+			tput sgr0
+		;;
+		* )
+			check_opt ps2pdf man2pdf
+			if [[ $? != "1"  && $1 ]]; then
+				man -t $1 | ps2pdf - >$1.pdf
+			else	echo "No manpage given."
+			fi
+		;;
+	esac
+}
+
+# Number of pages required if printed
+function numpages() { echo $(($(wc -l $* | sed -n 's/ total$//p')/60)); }
+
+#################################################
+# Process & System
+#################################################
+
+function my_ps() { ps $@ -u $USER -o pid,%cpu,%mem,bsdtime,command ; }
+function pp() { my_ps f | awk '!/awk/ && $0~var' var=${1:-".*"} ; }
+
+
+function killps()   # kill by process name
+{
+    local pid pname sig="-TERM"   # default signal
+    if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+        echo "Usage: killps [-SIGNAL] pattern"
+        return;
+    fi
+    if [ $# = 2 ]; then sig=$1 ; fi
+    for pid in $(my_ps| awk '!/awk/ && $0~pat { print $1 }' pat=${!#} )
+    do
+        pname=$(my_ps | awk '$1~var { print $5 }' var=$pid )
+        if ask "Kill process $pid <$pname> with signal $sig?"
+            then kill $sig $pid
+        fi
+    done
+}
+
+function mydf()         # Pretty-print of 'df' output.
+{                       # Inspired by 'dfc' utility.
+    for fs ; do
+
+        if [ ! -d $fs ]
+        then
+          echo -e $fs" :No such file or directory" ; continue
+        fi
+
+        local info=( $(command df -P $fs | awk 'END{ print $2,$3,$5 }') )
+        local free=( $(command df -Pkh $fs | awk 'END{ print $4 }') )
+        local nbstars=$(( 20 * ${info[1]} / ${info[0]} ))
+        local out="["
+        for ((j=0;j<20;j++)); do
+            if [ ${j} -lt ${nbstars} ]; then
+               out=$out"*"
+            else
+               out=$out"-"
+            fi
+        done
+        out=${info[2]}" "$out"] ("$free" free on "$fs")"
+        echo -e $out
+    done
+}
+
+function usage()
+{
+	# Credit: http://unix.stackexchange.com/questions/119126/command-to-display-memory-usage-disk-usage-and-cpu-load
+	free -m | awk 'NR==2{printf "Memory Usage: %s/%sMB (%.2f%)\n", $3,$2,$3*100/$2 }'
+	df -h | awk '$NF=="/"{printf "Disk Usage: %d/%dGB (%s)\n", $4,$3,$6}'
+	top -bn1 | grep load | awk '{printf "CPU Load: %.2f\n", $(NF-2)}'
+}
+
+function ii()   # Get current host related info.
+{
+    echo -e "\nYou are logged on ${BRed}$HOST"
+    echo -e "\n${BRed}Additionnal information:$NC " ; uname -a
+    echo -e "\n${BRed}Users logged on:$NC " ; w -hs |
+             cut -d " " -f1 | sort | uniq
+    echo -e "\n${BRed}Current date :$NC " ; date
+    echo -e "\n${BRed}Machine stats :$NC " ; uptime
+    echo -e "\n${BRed}Memory stats :$NC " ; free
+    echo -e "\n${BRed}Diskspace :$NC " ; mydf / $HOME
+    echo -e "\n${BRed}Local IP Address :$NC" ; my_ip
+    echo -e "\n${BRed}Open connections :$NC "; netstat -pan --inet;
+    echo
+}
+
+#################################################
+# Network
+#################################################
+
+# list MAC adress
+function lsmac() { ifconfig -a | awk '/HWaddr/ {print $5}' ; }
+
+# get all IPs via ifconfig
+function allips() { ifconfig | awk '/inet / {sub(/addr:/, "", $2); print $2}'; }
+
+function getip() { lynx -dump http://whatismyip.org/; }
+
+# finds all functions defined in any shell script secified, including .bashrc
+function find_shell_fun() { read -p "File name> "; sort -d $REPLY | grep "() {" | sed -e 's/() {//g' | less; }
+
+#################################################
+# Counting
+#################################################
+
+function count_files()
+# copyright 2007 - 2010 Christopher Bratusek
+{
+	case $1 in
+		*+h)
+			echo $(($(ls --color=no -1 -la . | grep -v ^l | wc -l)-1))
+		;;
+		*-h)
+			echo $(($(ls --color=no -1 -l . | grep -v ^l | wc -l)-1))
+		;;
+		*+d)
+			echo $(($(ls --color=no -1 -la . | grep -v ^- | wc -l)-1))
+		;;
+		*-d)
+			echo $(($(ls --color=no -1 -l . | grep -v ^- | wc -l)-1))
+		;;
+		*+f)
+			echo $(($(ls --color=no -1 -la . | grep -v ^d | wc -l)-1))
+		;;
+		*-f)
+			echo $(($(ls --color=no -1 -l . | grep -v ^d | wc -l)-1))
+		;;
+		*)
+			echo -e "\n${ewhite}Usage:"
+			echo -e "\n${eorange}count_files${ewhite} | ${egreen}+h ${eiceblue}[count files and folders - include hidden ones] \
+			\n${eorange}count_files${ewhite} | ${egreen}-h ${eiceblue}[count files and folders - exclude hidden ones] \
+			\n${eorange}count_files${ewhite} | ${egreen}+d ${eiceblue}[count folders - include hidden ones] \
+			\n${eorange}count_files${ewhite} | ${egreen}-d ${eiceblue}[count folders - exclude hidden ones] \
+			\n${eorange}count_files${ewhite} | ${egreen}+f ${eiceblue}[count files - include hidden ones] \
+			\n${eorange}count_files${ewhite} | ${egreen}-f ${eiceblue}[count files - exclude hidden ones]\n"
+			tput sgr0
+		;;
+	esac
+}
+
+function count_files_by_ext() { find . -type f | sed -n 's/..*\.//p' | sort -f | uniq -ic ; }
+
+function count_processes()
+# copyright 2007 - 2010 Christopher Bratusek
+{
+	case $1 in
+		*help )
+			echo -e "\n${ewhite}Usage:"
+			echo -e "\n${eorange}count_processes${ewhite} | ${egreen}! no options !\n"
+			tput sgr0
+		;;
+		* )
+			procs=$(ps ax | wc -l | awk '{print $1}')
+			if [[ $procs -lt 10 ]]; then
+				echo "000$procs"
+			elif [[ $procs -lt 100 ]]; then
+				echo "00$procs"
+			elif [[ $procs -lt 1000 ]]; then
+				echo "0$procs"
+			fi
+		;;
+	esac
+}
+
+#################################################
+# MISC
+#################################################
+
+# Example: add_alias rm "rm -i"
+function add_alias()
+{
+        if [[ $1 && $2 ]]
+        then
+        echo -e "alias $1=\"$2\"" >> ~/.bash_aliases
+        alias $1=$2
+        fi
+}
+
+function ask()          # See 'killps' for example of use.
+{
+    echo -n "$@" '[y/n] ' ; read ans
+    case "$ans" in
+        y*|Y*) return 0 ;;
+        *) return 1 ;;
+    esac
+}

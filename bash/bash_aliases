@@ -1,0 +1,80 @@
+##################################################
+# My Aliases					 #
+##################################################
+
+#########################################
+# yaourt-ing
+#########################################
+alias rmorphans='sudo pacman -Rns $(pacman -Qtdq)'
+alias purge='sudo pacman -Rns'
+alias rip='sudo pacman -Rsc'
+
+#########################################
+# ls-ing
+#########################################
+alias ll='ls -lhv --group-directories-first'
+alias la='ls -hA --group-directories-first'
+alias lm='ls -alF |more'
+alias l.='ls -hd .[[:alnum:]]* 2> /dev/null || echo "No hidden file here..."'		# list only hidden files
+alias lxt='ls -lhXB'   # Sort by extension
+alias lsz='ls -lhSr'   # Sort by size
+alias ldt='ls -lhtr'   # Sort by date
+alias l='ls -hCF'
+
+#########################################
+# cd-ing
+#########################################
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias ......='cd ../../../../..'
+
+#########################################
+# grep-ing
+#########################################
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+alias hgrep='history | grep $1'
+
+#########################################
+# Shortcuts
+#########################################
+alias brokeln='find . -type l -! -exec test -e {} \; -print'
+alias 7z_it='7z a -mx=9 -ms=on archive.7z $1' # create solid archive (best compression) with 7z
+# autograb missing keys
+alias debug="set -o nounset; set -o xtrace"
+alias mkdirday='mkdir `date +%Y%m%d`_$1' # creates directory that starts with current day
+alias myps='/bin/ps -u "$USER" -o user,pid,ppid,pcpu,pmem,args|less' # ps
+alias numFiles='echo $(ls -1 | wc -l)' # numFiles: number of (non-hidden) files in current directory
+alias ontime='date -d @$(echo $(($(date +%s)-$(cat /proc/uptime|cut -d. -f1))))' # knowing when a machine is turned on
+alias path='echo -e ${PATH//:/\\n}'
+alias reboot='sudo /sbin/reboot'
+alias rm_DS_Store_files='find . -name .DS_Store -exec rm {} \;' # removes all .DS_Store file from the current dir and below
+alias prettyjson='python -m json.tool'
+
+#########################################
+# comand substitution
+#########################################
+alias cp='cp -i'
+alias df='df -kTh'
+alias du='du -kh'
+alias mkdir='mkdir -p'
+alias more='less'
+alias mv='mv -i'
+#alias ps='ps auxf'
+alias rm='rm -i'
+alias wget='wget -c'
+#alias e='emacsclient -t'
+#alias ec='emacsclient -c'
+alias vi='vim'
+alias pbcopy='xclip -selection clipboard'  # for MAC compatibility
+alias pbpaste='xclip -selection clipboard -o'  # for MAC compatibility
+alias diff='colordiff'
+
+#########################################
+# python pip
+#########################################
+alias pipinstall='sudo -H pip install'
+alias pipupgrade='pip list --outdated | grep -v "^\-e" | cut -d \( -f 1 | sudo -H xargs -n1 pip install -U'
