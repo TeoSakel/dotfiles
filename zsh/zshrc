@@ -5,19 +5,18 @@
 # Antigen package manager
 source ~/.antigen.zsh
 
-# Colorschemes
-antigen bundle zsh-users/zsh-syntax-highlighting
-antigen bundle joel-porquet/zsh-dircolors-solarized.git
-
 # Load the oh-my-zsh's library.
 antigen use oh-my-zsh
+
+# Colorschemes
+antigen bundle zdharma/fast-syntax-highlighting
+# antigen bundle zsh-users/zsh-syntax-highlighting
+antigen bundle joel-porquet/zsh-dircolors-solarized.git
 
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
 antigen bundle git
 antigen bundle tmux
 antigen bundle archlinux
-antigen bundle history
-antigen bundle python
 antigen bundle autojump
 antigen bundle colored-man-pages
 antigen bundle command-not-found
@@ -32,21 +31,19 @@ antigen theme agnoster
 # Tell Antigen that you're done.
 antigen apply
 
-# bug of antigen or dircolors?
-source .antigen/bundles/joel-porquet/zsh-dircolors-solarized/zsh-dircolors-solarized.zsh
-
 # ----------------- #
 # >>>>> Path <<<<<< #
 # ----------------- #
 
-path=(~/bin ~/.local/bin $path[@])
+[ -d "~/.local/bin" ] || path=("~/.local/bin" $path[@])
+[ -d "~/bin" ] || path=("~/bin" $path[@])
 
 # -------------------- #
 # >>>>> Aliases <<<<<< #
 # -------------------- #
 
 if [ -f ~/.zsh_aliases ]; then
-    . ~/.zsh_aliases
+    source ~/.zsh_aliases
 fi
 
 # -------------------- #
@@ -61,6 +58,6 @@ HIST_STAMPS="yyyy-mm-dd"
 # ---------------- #
 
 if [ -f ~/.zshrc_local ]; then
-    . ~/.zshrc_local
+    source ~/.zshrc_local
 fi
 
