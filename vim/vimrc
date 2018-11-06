@@ -5,31 +5,39 @@
 let g:has_async = v:version >= 800 || has('nvim')
 
 call plug#begin('~/.vim/bundle')
-Plug 'chrisbra/csv.vim'
-Plug 'ctrlpvim/ctrlp.vim', { 'on': ['CtrlP', 'CtrlPBuffer', 'CtrlPMRU', 'CtrlPMixed'] }
 Plug 'ervandew/supertab'
 Plug 'flazz/vim-colorschemes'
-Plug 'haya14busa/incsearch.vim'
-Plug 'jalvesaq/Nvim-R', { 'for': 'R' }
+Plug 'haya14busa/incsearch.vim'  " for vim < 8.0.1238. After use is.vim
 Plug 'junegunn/vim-easy-align', { 'on': 'EasyAlign' }
 Plug 'lervag/vimtex'
-Plug 'mbbill/undotree', { 'on': 'UndotreeToggle' }
-Plug 'scrooloose/nerdcommenter'
 Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
+Plug 'woelke/vim-nerdtree_plugin_open', {'on': 'NERDTreeToggle'}
+Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-repeat'
 Plug 'tpope/vim-surround'
+Plug 'tpope/vim-unimpaired'
+Plug 'vim-pandoc/vim-pandoc'
+Plug 'vim-pandoc/vim-pandoc-syntax'
+Plug 'vim-pandoc/vim-rmarkdown'
 if g:has_async
+    Plug 'jalvesaq/Nvim-R', { 'for': 'R' }
     Plug 'w0rp/ale'
 else
     Plug 'vim-syntastic/syntastic'
 endif
 if has('python')
-    Plug 'Valloric/YouCompleteMe', { 'frozen': 1, 'do': './install.py' }
+    " Plug 'Valloric/YouCompleteMe', { 'frozen': 1, 'do': './install.py' }
     Plug 'SirVer/ultisnips'
 else
     Plug 'garbas/vim-snipmate'
 endif
 Plug 'honza/vim-snippets'
+" Plug 'chrisbra/csv.vim'
+" Plug 'ctrlpvim/ctrlp.vim', { 'on': ['CtrlP', 'CtrlPBuffer', 'CtrlPMRU', 'CtrlPMixed'] }
+" Plug 'ludovicchabant/vim-gutentags'
+" Plug 'mbbill/undotree', { 'on': 'UndotreeToggle' }
+" Plug 'svermeulen/vim-easyclip'
 call plug#end()
 
 filetype plugin indent on
@@ -44,10 +52,10 @@ set autoread " Set to auto read when a file is changed from the outside
 " ====== Directories ========= "
 " ============================ " 
 
-set backupdir=~/.vim.d/backups
-set directory=~/.vim.d/swaps
+set backupdir=~/.vim/backups
+set directory=~/.vim/swaps
 if has("persistent_undo")
-    set undodir=~/.undodir/
+    set undodir=~/.vim/undo/
     set undofile " Save undo's after file closes
     set undolevels=1000 " How many undos
     set undoreload=10000 " number of lines to save for undo
@@ -63,10 +71,13 @@ set background=dark
 colorscheme solarized
 " Special highlighting
 highlight Comment cterm=italic
-highlight CursorLine term=bold cterm=bold guibg=Grey40 
+highlight SpellBad cterm=underline ctermfg=red
+highlight SpellCap cterm=underline ctermfg=red
+highlight SpellLocal cterm=underline ctermfg=yellow
+highlight SpellRare cterm=underline ctermfg=yellow
+" highlight CursorLine term=bold cterm=bold guibg=Grey40 
 highlight LineNr term=bold cterm=NONE ctermfg=DarkGrey ctermbg=NONE 
 highlight LineNr gui=NONE guifg=DarkGrey guibg=NONE
-" }}}
 
 " ============================ " 
 " ========= Leader =========== "
@@ -81,8 +92,10 @@ let g:mapleader = ","
 
 " show current position 
 set ruler " show position at status line
-set cursorline " Emphasis on cursor line
+" set cursorline " Emphasis on cursor line
 set number " Show line numbers
+set relativenumber
+set colorcolumn=80
 
 " Line Behaviour
 set autoindent
@@ -90,7 +103,7 @@ set smartindent
 set wrap "Wrap lines
 set whichwrap+=<,>,h,l
 set lbr " Linebreak
-set tw=500 " Linebreak position 500 characters
+" set tw=500 " Linebreak position 500 characters
 
 " Window Behaviour
 set hid " A buffer becomes hidden when it is abandoned
@@ -107,6 +120,15 @@ set ignorecase " Ignore case when searching
 set smartcase " When searching try to be smart about cases 
 set hlsearch  " Highlight search results
 set incsearch " Makes search act like search in modern browsers
+if executable('ag') 
+    set grepprg=ag\ --nogroup\ --nocolor " Use ag over grep 
+    let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
+    " ag is fast enough that CtrlP doesn't need to cache
+    let g:ctrlp_use_caching = 0
+else
+    let g:ctrlp_user_command = 'find %s -type f'
+endif
+
 
 " Tab Behaviour
 set expandtab " Use spaces instead of tabs
@@ -117,7 +139,8 @@ set tabstop=4
 " Code Folding
 set foldmethod=syntax " hold based on indent
 set foldnestmax=5 " deepest fold allowed
-set foldenable " don't fold by default
+set nofoldenable " don't fold by default
+" TODO: how to toggle folding?
 
 " Misc
 set lazyredraw " Don't redraw while executing macros (good performance config)
@@ -148,30 +171,55 @@ endfunc
 autocmd BufWrite *.py :call DeleteTrailingWS()
 autocmd BufWrite *.coffee :call DeleteTrailingWS()
 
+" fill rest of line with characters
+function! FillLine( str )
+    " set tw to the desired total length
+    let tw = &textwidth
+    if tw==0 | let tw = 80 | endif
+    " strip trailing spaces first
+    .s/[[:space:]]*$//
+    " calculate total number of 'str's to insert
+    let reps = (tw - col("$")) / len(a:str)
+    " insert them, if there's room, removing trailing spaces (though forcing
+    " there to be one)
+    if reps > 0
+        .s/$/\=(' '.repeat(a:str, reps))/
+    endif
+endfunction
 
 " ============================ "
 " ==== Custom KeyMappings ==== "
 " ============================ "
 
 " :W sudo saves the file 
-command W w !sudo tee % > /dev/null
+command! W w !sudo tee % > /dev/null
 
 " Fast saving
 nmap <leader>w :w!<cr>
-" Enter breaks lines in Normal mode
-nmap <S-CR> O<Esc>
-nmap <CR> o<Esc>
+
+" faster spell correction (1st suggestion)
+" https://stackoverflow.com/a/16481737
+imap <c-l> <c-g>u<Esc>[s1z=`]a<c-g>u
+nmap <c-l> [s1z=<c-o>
 
 " Visual mode pressing * or # searches for the current selection
 " Super useful! From an idea by Michael Naumann
 vnoremap <silent> * :<C-u>call VisualSelection('', '')<CR>/<C-R>=@/<CR><CR>
-" vnoremap <silent> # :<C-u>call VisualSelection('', '')<CR>?<C-R>=@/<CR><CR>
+vnoremap <silent> # :<C-u>call VisualSelection('', '')<CR>?<C-R>=@/<CR><CR>
 
 " Toggle cursorline emphasis
 nnoremap <leader>i :set cursorline!<cr> " Toggle cursorline focus
 
+" Execute current line and capture output
+noremap Q !!$SHELL<CR>
+
+" Fill line with -
+map <F7> :call FillLine( '-' )
+
 " bind K to grep word under cursor
-nnoremap K :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
+" nnoremap K :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
+
+set langmap=ΑA,ΒB,ΨC,ΔD,ΕE,ΦF,ΓG,ΗH,ΙI,ΞJ,ΚK,ΛL,ΜM,ΝN,ΟO,ΠP,QQ,ΡR,ΣS,ΤT,ΘU,ΩV,WW,ΧX,ΥY,ΖZ,αa,βb,ψc,δd,εe,φf,γg,ηh,ιi,ξj,κk,λl,μm,νn,οo,πp,qq,ρr,σs,τt,θu,ωv,ςw,χx,υy,ζz
 
 " ========================== "
 " ==== Plugin Settings ===== "
@@ -180,9 +228,34 @@ nnoremap K :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 " powerline
 let g:powerline_pycmd="py3"
 
+" Toggle NERDTree with Ctrl-n
+map <C-n> :NERDTreeToggle<CR>
+" Automatically close vim if only NERDTree is left
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+" NERDTree open plugin: default command (default mapping <E>)
+let g:nerdtree_plugin_open_cmd = 'xdg-open'
+
+" supertab
+let g:SuperTabClosePreviewOnPopupClose = 1
+let g:SuperTabDefaultCompletionType = "context"
+
 " Easy Align Settings
 xmap ga <Plug>(EasyAlign)  " Start interactive EasyAlign in visual mode (e.g. vipga)
 nmap ga <Plug>(EasyAlign)  " Start interactive EasyAlign for a motion/text object (e.g. gaip)
+
+" incsearch
+" replace vim's default search
+map /  <Plug>(incsearch-forward)
+map ?  <Plug>(incsearch-backward)
+map g/ <Plug>(incsearch-stay)
+" no hlsearch after move
+let g:incsearch#auto_nohlsearch = 1
+map n  <Plug>(incsearch-nohl-n)
+map N  <Plug>(incsearch-nohl-N)
+map *  <Plug>(incsearch-nohl-*)
+map #  <Plug>(incsearch-nohl-#)
+map g* <Plug>(incsearch-nohl-g*)
+map g# <Plug>(incsearch-nohl-g#)
 
 " Linter
 if g:has_async
@@ -201,50 +274,8 @@ else
     let g:syntastic_check_on_wq = 0
 endif
 
-" Toggle NERDTree with Ctrl-n
-map <C-n> :NERDTreeToggle<CR>
-" Automatically close vim if only NERDTree is left
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-
-" NERDCommenter recommended options
-let g:NERDSpaceDelims = 1 " space after comment
-let g:NERDCompactSexyComs = 1 " Use compact syntax for prettified multi-line comments
-let g:NERDDefaultAlign = 'left' " Align comments left 
-let g:NERDTrimTrailingWhitespace = 1 " Trim whitespace from comments
-
-" CtrlP recommended options
-let g:ctrlp_map = '<c-p>'
-let g:ctrlp_cmd = 'CtrlP'
-let g:ctrlp_working_path_mode = 'ra' "r:nearest ancestor with git, a:current file (almost)  
-
-set wildignore+=*/tmp/*,*.so,*.swp,*.zip
-
-let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
-let g:ctrlp_custom_ignore = {
-            \ 'dir':  '\v[\/]\.(git|hg|svn)$',
-            \ 'file': '\v\.(exe|so|dll)$'
-            \ }
-
-if executable('ag') 
-    set grepprg=ag\ --nogroup\ --nocolor " Use ag over grep 
-    let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
-    " ag is fast enough that CtrlP doesn't need to cache
-    let g:ctrlp_use_caching = 0
-else
-    let g:ctrlp_user_command = 'find %s -type f'
-endif
-
-" UndoTree
-nnoremap <F5> :UndotreeToggle<cr>
-
 " Snippets
 if has('python')
-    " from: https://stackoverflow.com/a/22253548/2167530
-    " make YCM compatible with UltiSnips (using supertab)
-    let g:ycm_key_list_select_completion = ['<C-n>', '<Down>']
-    let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
-    let g:SuperTabDefaultCompletionType = '<C-n>'
-
     " better key bindings for UltiSnipsExpandTrigger
     let g:UltiSnipsExpandTrigger = "<tab>"
     let g:UltiSnipsJumpForwardTrigger = "<tab>"
