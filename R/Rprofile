@@ -30,6 +30,37 @@ if (interactive()) {
     .teo$object_size <- function(obj) print(object.size(obj), units = "auto")
     .teo$regextract <- function(txt, regex, ...) regmatches(txt, regexpr(regex, txt, ...))
 
+    .teo$sub2ind <- function(A, r, c) {
+        if (length(dim(A)) == 2L) {
+            m <- nrow(A)
+            N <- m * ncol(A)
+        } else if (is.null(dim(A)) && length(A) == 2L) {
+            m <- A[1]
+            N <- prod(A)
+        } else
+            stop("A must be a 2x2 matrix or the dimensions of one")
+
+        ind <- as.integer((c - 1L) * m + r)
+        ifelse(ind <= N, ind, NA_integer_)
+    }
+
+    .teo$ind2sub <- function(A, ind) {
+        if (length(dim(A)) == 2L) {
+            m <- nrow(A)
+            n <- ncol(A)
+        } else if (is.null(dim(A)) && length(A) == 2L) {
+            m <- A[1L]
+            n <- A[2L]
+        } else
+            stop("A must be a 2x2 matrix or the dimensions of one")
+
+        sub <- as.integer(c(row = 1L + ((ind - 1L) %% m), 
+                            col = 1L + floor((ind - 1L) / m)))
+        if (all(sub <= dim(A)))
+            return(sub)
+        return(as.integer(c(NA, NA)))
+    }
+
     # Trigonometry
     .teo$rad2deg <- function(rad) rad * 180 / pi
     .teo$deg2rad <- function(deg) deg * pi / 180
@@ -49,14 +80,14 @@ if (interactive()) {
         try(close(con), silent = TRUE)  # try in case of "Windows"
     }
     # read table from system clipboard
-    .teo$pbpaste <- function(df = TRUE, sep = "\t", header = TRUE, ...) {
+    .teo$pbpaste <- function(as.df = TRUE, sep = "\t", header = TRUE, ...) {
         con <- switch(Sys.info()["sysname"],
                       Linux = pipe("xclip -selection clipboard -o", open = "r"),
                       Darwin = pipe("pbpaste"),
                       Windows = "clipboard")
+        on.exit(try(close(con), silent = TRUE))
         y <- read.table(con, header = header, sep = sep, ...)
-        try(close(con), silent = TRUE)
-        if ( df ) return(y)
+        if ( as.df ) return(y)
         return(unlist(y, use.names = FALSE))
     }
 
@@ -80,7 +111,7 @@ if (interactive()) {
     }
 
     # shorthand
-    .teo$lsz <- function(..., n = 10) 
+    .teo$lsz <- function(..., n = 10)
         .teo$ll(..., order.by = "Size", decreasing = TRUE)
 
     attach(.teo)
