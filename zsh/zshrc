@@ -3,7 +3,7 @@
 # -------------------- #
 
 # Antigen package manager
-source ~/.antigen.zsh
+source /usr/share/zsh/share/antigen.zsh
 
 # Load the oh-my-zsh's library.
 antigen use oh-my-zsh
@@ -26,6 +26,11 @@ antigen bundle zsh-users/zsh-completions
 # antigen bundle zsh-users/autosuggestions
 
 # Load the theme.
+# powerline
+export DEFAULT_USER=teo
+powerline-daemon -q
+. /usr/lib/python3.7/site-packages/powerline/bindings/zsh/powerline.zsh
+
 antigen theme agnoster
 
 # Tell Antigen that you're done.
